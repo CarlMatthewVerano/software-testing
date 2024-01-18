@@ -1,5 +1,13 @@
 package com.amigoscode.testing.customer;
 
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.BDDMockito.*;
+import static org.mockito.Mockito.*;
+
+import java.util.Optional;
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -7,20 +15,15 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.never;
+import com.amigoscode.testing.utils.PhoneNumberValidator;
 
 class CustomerRegistrationServiceTest {
 
     @Mock
     private CustomerRepository customerRepository;
+
+    @Mock
+    private PhoneNumberValidator phoneNumberValidator;
 
     @Captor
     private ArgumentCaptor<Customer> customerArgumentCaptor;
@@ -30,7 +33,7 @@ class CustomerRegistrationServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.initMocks(this);
-        underTest = new CustomerRegistrationService(customerRepository);
+        underTest = new CustomerRegistrationService(customerRepository, phoneNumberValidator);
     }
 
     @Test
@@ -45,6 +48,9 @@ class CustomerRegistrationServiceTest {
         // ... No customer with phone number passed
         given(customerRepository.selectCustomerByPhoneNumber(phoneNumber))
                 .willReturn(Optional.empty());
+
+        // ... Valid phone number
+        given(phoneNumberValidator.test(phoneNumber)).willReturn(true);
 
         // When
         underTest.registerNewCustomer(request);
@@ -67,6 +73,9 @@ class CustomerRegistrationServiceTest {
         // ... No customer with phone number passed
         given(customerRepository.selectCustomerByPhoneNumber(phoneNumber))
                 .willReturn(Optional.empty());
+        
+        // ... Valid phone number
+        given(phoneNumberValidator.test(phoneNumber)).willReturn(true);
 
         // When
         underTest.registerNewCustomer(request);
@@ -91,7 +100,10 @@ class CustomerRegistrationServiceTest {
         // ... an existing customer is retuned
         given(customerRepository.selectCustomerByPhoneNumber(phoneNumber))
                 .willReturn(Optional.of(customer));
-
+        
+        // ... Valid phone number
+        given(phoneNumberValidator.test(phoneNumber)).willReturn(true);
+        
         // When
         underTest.registerNewCustomer(request);
 
@@ -113,6 +125,9 @@ class CustomerRegistrationServiceTest {
         given(customerRepository.selectCustomerByPhoneNumber(phoneNumber))
                 .willReturn(Optional.of(customerTwo));
 
+        // ... Valid phone number
+        given(phoneNumberValidator.test(phoneNumber)).willReturn(true);
+        
         // When
         // Then
         assertThatThrownBy(() -> underTest.registerNewCustomer(request))
